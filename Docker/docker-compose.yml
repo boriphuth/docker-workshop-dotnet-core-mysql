@@ -1,0 +1,32 @@
+version: '3'
+services:
+  webapp:
+    container_name: api
+    image: webapp:0.1
+    build:
+      context: ../
+      dockerfile: ./Docker/Multi.dockerfile
+    ports:
+      - "5000:80"
+    links:
+      - mysql
+    environment:
+      MYSQL_SERVER_NAME: db
+    env_file:
+      - secrets.env
+    depends_on:
+      - mysql
+
+  mysql:
+    container_name: db
+    image: mysql:5.7
+    restart: always
+    volumes:
+      - dbvolume:/var/lib/mysql
+    environment:
+      MYSQL_RANDOM_ROOT_PASSWORD: xyzabc
+    env_file:
+      - secrets.env
+
+volumes:
+  dbvolume:

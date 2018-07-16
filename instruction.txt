@@ -1,0 +1,74 @@
+============= Solution 1 ==============
+### 1. [Build] .Net Core 2.0 Project
+$docker image build -t net:0.1 -f ./Docker/Build.dockerfile .
+
+### 2. [Ship]Create Docker Image from step#1
+# 2.1 Copy file from image
+$docker container run --rm -v $(pwd)/output:/tmp net:0.1 sh -c "cp -r /app/output/* /tmp"
+
+# 2.2 Build image to ship software
+$docker image build -t net:0.1 -f ./Docker/Build.dockerfile .
+
+### 3. [Run] Docker Container from step#2
+$docker container run -d result:0.1
+$docker logs <container id/name> --follow
+
+============= Solution 2 ==============
+Working with multi-stage build
+$docker image build -t app:0.1 -f ./Docker/Multi.dockerfile .
+$docker container run -d app:0.1
+$docker logs <container id/name> --follow
+
+============= Working with MySQL database ============
+https://hub.docker.com/_/mysql/
+
+# Pull image from docker hub
+$docker image pull mysql:5.7
+
+# Create container of mysql image
+$docker container run -e MYSQL_RANDOM_ROOT_PASSWORD=xyzabc \
+ -e MYSQL_DATABASE=Students \
+ -e MYSQL_USER=user_name_1 \
+ -e MYSQL_PASSWORD=my-secret-pw \
+ --name db \
+ mysql:5.7
+
+ # Testing Database
+ $docker container exec -it <container id/name> bash
+ >mysql -uuser_name_1 -pmy-secret-pw
+ mysql>show databases;
+ mysql>use Students;
+ mysql>show tables;
+
+ ============ .Net Core + MySQL ==============
+# Start with Problem => can't connect to database from API (.Net Core)
+$docker container run --rm app:0.1
+Connecting to database. Trying: 1
+Connecting to database. Trying: 2
+Connecting to database. Trying: 3
+
+# Try to create new container with environment variables
+$docker container run --rm -p 5000:80 \
+-e MYSQL_SERVER_NAME=db \
+-e MYSQL_DATABASE=Students \
+-e MYSQL_USER=user_name_1 \
+-e MYSQL_PASSWORD=my-secret-pw \
+--link db app:0.1
+
+# Add data from API with curl
+$curl -X POST \
+  http://localhost:5000/api/Department/ \
+  -H 'cache-control: no-cache' \
+  -H 'content-type: application/json' \
+  -H 'postman-token: ce786dd0-5d17-bc94-81d3-8191203649cb' \
+  -d '{
+ "Name": "Test Deparment"
+}'
+
+$curl http://localhost:5000/api/Department/1
+Or open in browser
+
+============= Working with docker-compose ==============
+$docker-compose -f Docker/docker-compose.yml build
+$docker-compose -f Docker/docker-compose.yml up
+$docker-compose -f Docker/docker-compose.yml down
